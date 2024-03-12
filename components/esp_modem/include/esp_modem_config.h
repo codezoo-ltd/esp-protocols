@@ -7,6 +7,7 @@
 #pragma once
 
 #include "driver/uart.h"
+#include "driver/gpio.h"
 #include "esp_modem_dce_config.h"
 
 #ifdef __cplusplus
@@ -100,17 +101,17 @@ struct esp_modem_dte_config {
         .task_stack_size = 4096,       \
         .task_priority = 5,            \
         .uart_config = {               \
-            .port_num = UART_NUM_1,                 \
+            .port_num = UART_NUM_2,                 \
             .data_bits = UART_DATA_8_BITS,          \
             .stop_bits = UART_STOP_BITS_1,          \
             .parity = UART_PARITY_DISABLE,          \
             .flow_control = ESP_MODEM_FLOW_CONTROL_NONE,\
             .source_clk = ESP_MODEM_DEFAULT_UART_CLK,   \
             .baud_rate = 115200,                    \
-            .tx_io_num = 25,                        \
-            .rx_io_num = 26,                        \
-            .rts_io_num = 27,                       \
-            .cts_io_num = 23,                       \
+            .tx_io_num = 17,                        \
+            .rx_io_num = 16,                        \
+            .rts_io_num = GPIO_NUM_NC,              \
+            .cts_io_num = GPIO_NUM_NC,              \
             .rx_buffer_size = 4096,                 \
             .tx_buffer_size = 512,                  \
             .event_queue_size = 30,                 \

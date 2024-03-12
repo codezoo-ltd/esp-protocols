@@ -9,6 +9,7 @@
 */
 #include <string.h>
 #include "esp_system.h"
+#include "driver/gpio.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -29,6 +30,14 @@
 #define EXAMPLE_ESP_WIFI_CHANNEL   CONFIG_ESP_WIFI_CHANNEL
 #define EXAMPLE_MAX_STA_CONN       CONFIG_ESP_MAX_STA_CONN
 
+#define GPIO_OUTPUT_WAKEUP         (gpio_num_t)GPIO_NUM_19
+#define GPIO_OUTPUT_WAKEUP_PIN_SEL (1ULL<<GPIO_OUTPUT_WAKEUP)
+#define GPIO_OUTPUT_RESET          (gpio_num_t)GPIO_NUM_18
+#define GPIO_OUTPUT_RESET_PIN_SEL  (1ULL<<GPIO_OUTPUT_RESET)
+#define GPIO_OUTPUT_PWRKEY         (gpio_num_t)GPIO_NUM_5
+#define GPIO_OUTPUT_PWRKEY_PIN_SEL (1ULL<<GPIO_OUTPUT_PWRKEY)
+#define GPIO_OUTPUT_EXTANT         (gpio_num_t)GPIO_NUM_4
+#define GPIO_OUTPUT_EXTANT_PIN_SEL (1ULL<<GPIO_OUTPUT_EXTANT)
 
 static const char *TAG = "ap_to_pppos";
 
@@ -36,6 +45,33 @@ static EventGroupHandle_t event_group = NULL;
 static const int CONNECT_BIT = BIT0;
 static const int DISCONNECT_BIT = BIT1;
 
+static void config_gpio(void)
+{
+	gpio_config_t io_conf = {};                     //zero-initialize the config structure.
+
+	io_conf.intr_type = GPIO_INTR_DISABLE;          //disable interrupt
+	io_conf.mode = GPIO_MODE_OUTPUT;                //set as output mode
+	io_conf.pin_bit_mask = (GPIO_OUTPUT_WAKEUP_PIN_SEL | GPIO_OUTPUT_RESET_PIN_SEL | GPIO_OUTPUT_PWRKEY_PIN_SEL | GPIO_OUTPUT_EXTANT_PIN_SEL);
+	io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;   //disable pull-down mode
+	io_conf.pull_up_en = GPIO_PULLUP_DISABLE;       //disable pull-up mode
+
+	gpio_config(&io_conf);                          //configure GPIO with the given settings
+}
+
+static void gpio_modem(void)
+{
+	/* Power on the modem */
+	ESP_LOGI(TAG, "Power on the modem");
+	gpio_set_level(GPIO_OUTPUT_WAKEUP, 1);
+	gpio_set_level(GPIO_OUTPUT_RESET, 0);
+	gpio_set_level(GPIO_OUTPUT_PWRKEY, 1);
+	gpio_set_level(GPIO_OUTPUT_EXTANT, 1);
+
+	vTaskDelay(pdMS_TO_TICKS(100));
+	gpio_set_level(GPIO_OUTPUT_RESET, 1);
+
+	vTaskDelay(pdMS_TO_TICKS(2000));
+}
 static void on_ip_event(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
@@ -161,6 +197,10 @@ void start_network(void)
 
 void app_main(void)
 {
+	// Initialize GPIO
+	config_gpio();
+	gpio_modem();
+
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

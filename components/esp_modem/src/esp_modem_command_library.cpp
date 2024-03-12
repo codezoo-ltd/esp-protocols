@@ -295,7 +295,7 @@ command_result set_pdp_context(CommandableIf *t, PdpContext &pdp)
 command_result set_data_mode(CommandableIf *t)
 {
     ESP_LOGV(TAG, "%s", __func__ );
-    return generic_command(t, "ATD*99#\r", "CONNECT", "ERROR", 5000);
+    return generic_command(t, "ATD*99***1#\r", "CONNECT", "ERROR", 5000);
 }
 
 command_result set_data_mode_alt(CommandableIf *t)
